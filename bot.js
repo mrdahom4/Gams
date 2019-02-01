@@ -29,7 +29,7 @@ client.on('ready', () => {
   console.log('')
   console.log('')
   console.log('')
-  client.user.setActivity('SmBot')
+  client.user.setActivity('SmBot by Lorans')
 });
    
 const prefix = '#'
