@@ -1,38 +1,9 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
-const prefix = '#';
-const axios = require('axios');
-const fs = require('fs');
-const ms = require('ms');
-const path = require('path');
-const moment = require('moment');
-const yt = require('ytdl-core');
-const YouTube = require('simple-youtube-api');
-const getYTID = require('get-youtube-id');
-const request = require('request');
-const fetchVideoInfo = require('youtube-info');
-const ytApiKey = 'AIzaSyAdORXg7UZUo7sePv97JyoDqtQVi3Ll0b8';
-const youtube = new YouTube(ytApiKey);
-const devs = ['525434548939653151'];
-
-var cooldownGames = new Set();
-var cooldownSurvival = new Set();
-var cooldownSetName = new Set();
-
-let queue = [];
-let songsQueue = [];
-let isPlaying = false;
-let dispatcher = null;
-let voiceChannel = null;
-let skipRequest = 0;
-let skippers = [];
-let ytResultList = [];
-let ytResultAdd = [];
-let re = /^(?:[1-5]|0[1-5]|10)$/;
-let regVol = /^(?:([1][0-9][0-9])|200|([1-9][0-9])|([0-9]))$/;
-let youtubeSearched = false;
-let selectUser;
-
+const fs = require("fs"); 
+const Canvas = require("canvas");
+const jimp = require("jimp");
+let points = {}
 client.on('ready', () => {
 // عند بدء البوت راح يرسل السي ام دي هذي الرسايل
   console.log('')
@@ -58,567 +29,608 @@ client.on('ready', () => {
   console.log('')
   console.log('')
   console.log('')
-  client.user.setActivity('#Games')
+  client.user.setActivity('SmBot')
 });
+   
+const prefix = '#'
+  client.on('message', message => {
+    if(message.author.bot) return;
+            if (!points[message.author.id]) points[message.author.id] = {
+             points: 0,id: message.author.id
+           };
+              if (message.content.startsWith(prefix + 'فكك')) {
+                if(!message.channel.guild) return message.reply('**هذا الأمر للسيرفرات فقط**').then(m => m.delete(3000));
+
+              const type = require('./fkk.json');
+              const item = type[Math.floor(Math.random() * type.length)];
+           let author = message.author;
+              const filter = response => {
+                
+                  return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
+              };
+              message.channel.send('**لديك 15 ثانيه لتفكيك الكلمه**').then(msg => {
+
+ const w = ['./img/w1.png'];//الخافيه
+            let Image = Canvas.Image,
+            canvas = new Canvas(400, 150),
+            ctx = canvas.getContext('2d');
+    
+            fs.readFile(`${w[Math.floor(Math.random() * w.length)]}`, function (err, Background) {
+            if (err) return console.log(err);
+            let BG = Canvas.Image;
+            let ground = new Image;
+            ground.src = Background;
+            ctx.drawImage(ground, 0, 0, 400, 150);
+ 
+});
+ let url = message.author.displayAvatarURL.endsWith(".webp") ? message.author.displayAvatarURL.slice(5, -20) + ".png" : message.author.displayAvatarURL;
+               jimp.read(url, (err, ava) => {
+                    if (err) return console.log(err);
+                    ava.getBuffer(jimp.MIME_PNG, (err, buf) => {
+                        if (err) return console.log(err);
+                       
+                      
+                        ctx.font = '15px Arial';
+                              ctx.fontSize = '10px';
+                              ctx.fillStyle = "#FFFFFF";
+                              ctx.textAlign = "center";
+              ctx.fillText(`${item.type} ` , 250, 100);
+              
+               let Avatar = Canvas.Image;
+                              let ava = new Avatar;
+                              ava.src = buf;
+                              ctx.beginPath();
+                              ctx.arc(70, 80, 63, 0, Math.PI*2);
+                                 ctx.closePath();
+                                 ctx.clip();
+                                 ctx.drawImage(ava, 8, 18, 128, 126);   
+message.channel.sendFile(canvas.toBuffer());
+ })
+             
+                      message.channel.awaitMessages(filter, { maxMatches: 1, time: 30000, errors: ['time'] })//وقت الاجابة
+                      .then((collected) => {
+                           var embed = new Discord.RichEmbed()
+                            .setDescription(`${collected.first().author} ✅ احسنت لقد تمكنت من تفكيك الكلمه بسرعه`)
+                 message.channel.send(embed);
+                  console.log(`[Typing] ${collected.first().author} typed the word.`);
+                          let won = collected.first().author;
+                          points[won.id].points++;
+                        })
+                        .catch(collected => {
+                       var embed1 = new Discord.RichEmbed()
+                            .setDescription(` لم يتمكن احد من تفكيك الكلمه في الوقت المناسب`)
+                 message.channel.send(embed1);
+                    console.log('[Typing] Error: No one type the word.');
+           
+                  })
+                })
+             
+  })
+}
+
+});
+
+
+
 
 client.on('message', message => {
-	var args = message.content.split(' ');
-	var args1 = message.content.split(' ').slice(1).join(' ');
-	var args2 = message.content.split(' ')[2];
-	var args3 = message.content.split(' ').slice(3).join(' ');
-	var command = message.content.toLowerCase().split(" ")[0];
-	var games = JSON.parse(fs.readFileSync('./games.json', 'utf8'));
-	var muf = message.mentions.users.first();
-	
-	if(message.author.bot) return;
-	if(message.channel.type === 'dm') return;
-	
-// كود تغيير الاسم والافتار وحالة اللعب
-	if(command == prefix + 'setname') {
-		let timecooldown = '1hour';
-		if(!devs.includes(message.author.id)) return;
-		if(cooldownSetName.has(message.author.id)) return message.reply(`**${ms(ms(timecooldown))}** يجب عليك الانتظار`);
-		if(!args1) return message.channel.send(`**➥ Useage:** ${prefix}setname \`\`RezfixBot\`\``).then(msg => msg.delete(7000));
-		if(args1 == client.user.username) return message.reply('**البوت مسمى من قبل بهذا الاسم**').then(msg => msg.delete(5000));
-		
-		cooldownSetName.add(message.author.id);
-		client.user.setUsername(args1);
-		message.reply(`\`\`${args1}\`\` **تم تغيير اسم البوت الى**`);
-		
-		setTimeout(function() {
-			cooldownSetName.delete(message.author.id);
-		}, ms(timecooldown));
-	}
-		if(command == prefix + 'setavatar') {
-			if(!devs.includes(message.author.id)) return;
-			if(!args1) return message.channel.send(`**➥ Useage:** ${prefix}setavatar \`\`Link\`\``).then(msg => msg.delete(7000));
-			
-			client.user.setAvatar(args1).catch(err => console.log(err)).then
-			return message.reply('**حاول مرة اخرى في وقت لاحق**').then(msg => msg.delete(5000));
-			
-			let avatarbot = new Discord.RichEmbed()
-			.setTitle(`:white_check_mark: **تم تغيير صورة البوت الى**`)
-			.setImage(args1)
-			.setTimestamp()
-			.setFooter(`by: ${message.author.username}#${message.author.discriminator}`, message.author.avatarURL)
-			message.channel.send(avatarbot).then(msg => msg.delete(7000));
-			message.delete();
-		}
-		if(command == prefix + 'setplay') {
-			if(!devs.includes(message.author.id)) return;
-			if(!args1) return message.channel.send(`**➥ Useage:** ${prefix}setplay \`\`www.Rezfix-Host.com\`\``).then(msg => msg.delete(7000));
-			client.user.setActivity(args1);
-			message.reply(`\`\`${args1}\`\` **تم تغيير حالة اللعب الى**`).then(msg => msg.delete(5000));
-			message.delete();
-		};
-		if(command == prefix + 'setwatch') {
-			if(!devs.includes(message.author.id)) return;
-			if(!args1) return message.channel.send(`**➥ Useage:** ${prefix}setwatch \`\`www.Rezfix-Host.com\`\``).then(msg => msg.delete(7000));
-			client.user.setActivity(args1, { type: 'WATCHING' });
-			message.reply(`\`\`${args1}\`\` **تم تغيير حالة المشاهدة الى**`).then(msg => msg.delete(5000));
-			message.delete();
-		};
-		if(command == prefix + 'setlisten') {
-			if(!devs.includes(message.author.id)) return;
-			if(!args1) return message.channel.send(`**➥ Useage:** ${prefix}setlisten \`\`www.Rezfix-Host.com\`\``).then(msg => msg.delete(7000));
-			client.user.setActivity(args1, { type: 'LISTENING' });
-			message.reply(`\`\`${args1}\`\` **تم تغيير حالة السماع الى**`).then(msg => msg.delete(5000));
-			message.delete();
-		};
-	    if(command == prefix + 'setstream') {
-			if(!devs.includes(message.author.id)) return;
-			if(!args1) return message.channel.send(`**➥ Useage:** ${prefix}setstream \`\`www.Rezfix-Host.com\`\``).then(msg => msg.delete(7000));
-			client.user.setActivity(args1, 'https://www.twitch.tv/xiaboodz_');
-			message.reply(`\`\`${args1}\`\` **تم تغيير حالة البث الى**`).then(msg => msg.delete(5000));
-			message.delete();
-		};
+	 if(message.author.bot) return;
+  if (!points[message.author.id]) points[message.author.id] = {
+             points: 0,id: message.author.id
+           };if (message.content.startsWith(prefix + 'لغز')) {
+	if(!message.channel.guild) return message.reply('**هذا الأمر للسيرفرات فقط**').then(m => m.delete(3000));
 
+const type = require('./quiz.json');
+const item = type[Math.floor(Math.random() * type.length)];
+const filter = response => {
+    return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
+};
+message.channel.send('**لديك 15 ثانيه لحل هذه الغز**').then(msg => {
+ const w = ['./img/w1.png'];//الخافيه
+            let Image = Canvas.Image,
+            canvas = new Canvas(400, 150),
+            ctx = canvas.getContext('2d');
+    
+            fs.readFile(`${w[Math.floor(Math.random() * w.length)]}`, function (err, Background) {
+            if (err) return console.log(err);
+            let BG = Canvas.Image;
+            let ground = new Image;
+            ground.src = Background;
+            ctx.drawImage(ground, 0, 0, 400, 150);
+ 
+});
+ let url = message.author.displayAvatarURL.endsWith(".webp") ? message.author.displayAvatarURL.slice(5, -20) + ".png" : message.author.displayAvatarURL;
+               jimp.read(url, (err, ava) => {
+                    if (err) return console.log(err);
+                    ava.getBuffer(jimp.MIME_PNG, (err, buf) => {
+                        if (err) return console.log(err);
+                       
+                      
+                        ctx.font = '15px Arial';
+                              ctx.fontSize = '10px';
+                              ctx.fillStyle = "#FFFFFF";
+                              ctx.textAlign = "center";
+              ctx.fillText(`${item.type} ` , 250, 100);
+              
+               let Avatar = Canvas.Image;
+                              let ava = new Avatar;
+                              ava.src = buf;
+                              ctx.beginPath();
+                              ctx.arc(70, 80, 63, 0, Math.PI*2);
+                                 ctx.closePath();
+                                 ctx.clip();
+                                 ctx.drawImage(ava, 8, 18, 128, 126);   
+message.channel.sendFile(canvas.toBuffer());
+ })
+             
+                      message.channel.awaitMessages(filter, { maxMatches: 1, time: 30000, errors: ['time'] })//وقت الاجابة
+                      .then((collected) => {
+                           var embed = new Discord.RichEmbed()
+                            .setDescription(`${collected.first().author} ✅ احسنت لقت تمكنت من حل الغز`)
+                 message.channel.send(embed);
+                  console.log(`[Typing] ${collected.first().author} typed the word.`);
+                          let won = collected.first().author;
+                          points[won.id].points++;
+                        })
+                        .catch(collected => {
+                       var embed1 = new Discord.RichEmbed()
+                            .setDescription(`:x:لم يتمكن احد من حل الغز `)
+                 message.channel.send(embed1);
+                    console.log('[Typing] Error: No one type the word.');
+           
+                  })
+                })
+             
+  })
+}
 
-
-// الالعاب
-	if(!games[message.author.id]) games[message.author.id] = {
-		laz: 0,
-		fkk: 0,
-		fast: 0,
-		emoji: 0,
-		flag: 0,
-		math: 0,
-	};
-	
-	if(command == prefix + 'لغز') {
-		let type = require('./qlaz.json');
-		let item = type[Math.floor(Math.random() * type.length)];
-		let filter = response => {
-		return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
-		};
-		var lazPoints = games[message.author.id].laz;
-		var fkkPoints = games[message.author.id].fkk;
-		var fastPoints = games[message.author.id].fast;
-		var emojiPoints = games[message.author.id].emoji;
-		var flagPoints = games[message.author.id].flag;
-		var mathPoints = games[message.author.id].math;
-		var allPoints = lazPoints + fkkPoints + fastPoints + emojiPoints + flagPoints + mathPoints;
-		
-		if(cooldownGames.has(message.author.id)) return message.reply('**جاوب على السؤال اولا**');
-		cooldownGames.add(message.author.id);
-		
-		let qLaz = new Discord.RichEmbed()
-		.setTitle(':video_game: **[GAMES]** لديك 15 ثانيه فقط لتجيب على السؤال التالي')
-		.setDescription(`اسرع واحد يقوم بحل اللغز التالي:\n\n➥ **${item.type}**`)
-		.setThumbnail(client.user.avatarURL)
-		.setColor('GRAY')
-		.setTimestamp()
-		.setFooter(`${prefix}points :لمعرفة نقاطك قم بكتابة الامر التالي`, client.user.avatarURL)
-		
-		message.channel.send(qLaz).then(() => {
-			message.channel.awaitMessages(filter, { maxMatches: 1, time: 15000, errors: ['time'] })
-			.then((collected) => {
-				let won = collected.first().author;
-				message.channel.send(`${collected.first().author} ✅ \`\`${allPoints + 1}\`\` لقد قمت بحل اللغز بالوقت المناسب, **مجموع نقاطك**`);
-				games[won.id].laz++;
-				cooldownGames.delete(message.author.id);
-				fs.writeFile("./games/games.json", JSON.stringify(games), (err) => {
-					if(err) console.error(err)
-				})
-			})
-			.catch(collected => {
-				message.channel.send(`:x: **لم يقم احد بحل اللغز بالوقت المناسب**`);
-				cooldownGames.delete(message.author.id);
-			})
-		})
-	}
-	if(command == prefix + 'فكك') {
-		let type = require('./qfkk.json');
-		let item = type[Math.floor(Math.random() * type.length)];
-		let filter = response => {
-		return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
-		};
-		var lazPoints = games[message.author.id].laz;
-		var fkkPoints = games[message.author.id].fkk;
-		var fastPoints = games[message.author.id].fast;
-		var emojiPoints = games[message.author.id].emoji;
-		var flagPoints = games[message.author.id].flag;
-		var mathPoints = games[message.author.id].math;
-		var allPoints = lazPoints + fkkPoints + fastPoints + emojiPoints + flagPoints + mathPoints;
-		
-		if(cooldownGames.has(message.author.id)) return message.reply('**جاوب على السؤال اولا**');
-		cooldownGames.add(message.author.id);
-		
-		let qFkk = new Discord.RichEmbed()
-		.setTitle(':video_game: **[GAMES]** لديك 15 ثانيه فقط لتجيب على السؤال التالي')
-		.setDescription(`اسرع واحد يقوم بتفكيك الجملة التالية:\n➥ **${item.type}**`)
-		.setThumbnail(client.user.avatarURL)
-		.setColor('GRAY')
-		.setTimestamp()
-		.setFooter(`${prefix}points :لمعرفة نقاطك قم بكتابة الامر التالي`, client.user.avatarURL)
-		
-		message.channel.send(qFkk).then(() => {
-			message.channel.awaitMessages(filter, { maxMatches: 1, time: 15000, errors: ['time'] })
-			.then((collected) => {
-				let won = collected.first().author;
-				message.channel.send(`${collected.first().author} ✅ \`\`${allPoints + 1}\`\` لقد قمت بتفكيك الكلمة بالوقت المناسب، **مجموع نقاطك**`);
-				games[won.id].fkk++;
-				cooldownGames.delete(message.author.id);
-				fs.writeFile("./games/games.json", JSON.stringify(games), (err) => {
-					if(err) console.error(err)
-				})
-			})
-			.catch(collected => {
-				message.channel.send(`:x: **لم يقم احد بتفكيك الكلمة بالوقت المناسب**`);
-				cooldownGames.delete(message.author.id);
-			})
-		})
-	}
-	if(command == prefix + 'اسرع') {
-		let type = require('./qfast.json');
-		let item = type[Math.floor(Math.random() * type.length)];
-		let filter = response => {
-		return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
-		};
-		var lazPoints = games[message.author.id].laz;
-		var fkkPoints = games[message.author.id].fkk;
-		var fastPoints = games[message.author.id].fast;
-		var emojiPoints = games[message.author.id].emoji;
-		var flagPoints = games[message.author.id].flag;
-		var mathPoints = games[message.author.id].math;
-		var allPoints = lazPoints + fkkPoints + fastPoints + emojiPoints + flagPoints + mathPoints;
-		
-		if(cooldownGames.has(message.author.id)) return message.reply('**جاوب على السؤال اولا**');
-		cooldownGames.add(message.author.id);
-		
-		let qFast = new Discord.RichEmbed()
-		.setTitle(':video_game: **[GAMES]** لديك 10 ثواني فقط لتجيب على السؤال التالي')
-		.setDescription(`اسرع واحد يكتب الجملة التالية:\n\n➥ **${item.type}**`)
-		.setThumbnail(client.user.avatarURL)
-		.setColor('GRAY')
-		.setTimestamp()
-		.setFooter(`${prefix}points :لمعرفة نقاطك قم بكتابة الامر التالي`, client.user.avatarURL)
-		
-		message.channel.send(qFast).then(() => {
-			message.channel.awaitMessages(filter, { maxMatches: 1, time: 10000, errors: ['time'] })
-			.then((collected) => {
-				let won = collected.first().author;
-				message.channel.send(`${collected.first().author} ✅ \`\`${allPoints + 1}\`\` لقد قمت بكتابة الجملة بالوقت المناسب، **مجموع نقاطك**`);
-				games[won.id].fast++;
-				cooldownGames.delete(message.author.id);
-				fs.writeFile("./games/games.json", JSON.stringify(games), (err) => {
-					if(err) console.error(err)
-				})
-			})
-			.catch(collected => {
-				message.channel.send(`:x: **لم يقم احد بكتابة الجملة بالوقت المناسب**`);
-				cooldownGames.delete(message.author.id);
-			})
-		})
-	}
-	if(command == prefix + 'ايموجي') {
-		let type = require('./qemoji.json');
-		let item = type[Math.floor(Math.random() * type.length)];
-		let filter = response => {
-		return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
-		};
-		var lazPoints = games[message.author.id].laz;
-		var fkkPoints = games[message.author.id].fkk;
-		var fastPoints = games[message.author.id].fast;
-		var emojiPoints = games[message.author.id].emoji;
-		var flagPoints = games[message.author.id].flag;
-		var mathPoints = games[message.author.id].math;
-		var allPoints = lazPoints + fkkPoints + fastPoints + emojiPoints + flagPoints + mathPoints;
-		
-		if(cooldownGames.has(message.author.id)) return message.reply('**جاوب على السؤال اولا**');
-		cooldownGames.add(message.author.id);
-		
-		let qEmoji = new Discord.RichEmbed()
-		.setTitle(':video_game: **[GAMES]** لديك 15 ثانيه فقط لتجيب على السؤال التالي')
-		.setDescription(`اسرع واحد يقوم بكتابة اسم الايموجي التالي:`)
-		.setImage(item.type)
-		.setThumbnail(client.user.avatarURL)
-		.setColor('00000')
-		.setTimestamp()
-		.setFooter(`${prefix}points :لمعرفة نقاطك قم بكتابة الامر التالي`, client.user.avatarURL)
-		
-		message.channel.send(qEmoji).then(() => {
-			message.channel.awaitMessages(filter, { maxMatches: 1, time: 15000, errors: ['time'] })
-			.then((collected) => {
-				let won = collected.first().author;
-				message.channel.send(`${collected.first().author} ✅ \`\`${allPoints + 1}\`\` لقد قمت بكتابة اسم الايموجي بالوقت المناسب، **مجموع نقاطك**`);
-				games[won.id].emoji++;
-				cooldownGames.delete(message.author.id);
-				fs.writeFile("./games/games.json", JSON.stringify(games), (err) => {
-					if(err) console.error(err)
-				})
-			})
-			.catch(collected => {
-				message.channel.send(`:x: **لم يقم احد بكتابة اسم الايموجي بالوقت المناسب**`);
-				cooldownGames.delete(message.author.id);
-			})
-		})
-	}
-	if(command == prefix + 'علم') {
-		let type = require('./qflag.json');
-		let item = type[Math.floor(Math.random() * type.length)];
-		let filter = response => {
-		return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
-		};
-		var lazPoints = games[message.author.id].laz;
-		var fkkPoints = games[message.author.id].fkk;
-		var fastPoints = games[message.author.id].fast;
-		var emojiPoints = games[message.author.id].emoji;
-		var flagPoints = games[message.author.id].flag;
-		var mathPoints = games[message.author.id].math;
-		var allPoints = lazPoints + fkkPoints + fastPoints + emojiPoints + flagPoints + mathPoints;
-		
-		if(cooldownGames.has(message.author.id)) return message.reply('**جاوب على السؤال اولا**');
-		cooldownGames.add(message.author.id);
-		
-		let qFlag = new Discord.RichEmbed()
-		.setTitle(':video_game: **[GAMES]** لديك 15 ثانيه فقط لتجيب على السؤال التالي')
-		.setDescription(`اسرع واحد يقوم بكتابة اسم العلم التالي:`)
-		.setImage(item.type)
-		.setThumbnail(client.user.avatarURL)
-		.setColor('00000')
-		.setTimestamp()
-		.setFooter(`${prefix}points :لمعرفة نقاطك قم بكتابة الامر التالي`, client.user.avatarURL)
-		
-		message.channel.send(qFlag).then(() => {
-			message.channel.awaitMessages(filter, { maxMatches: 1, time: 15000, errors: ['time'] })
-			.then((collected) => {
-				let won = collected.first().author;
-				message.channel.send(`${collected.first().author} ✅ \`\`${allPoints + 1}\`\` لقد قمت بكتابة اسم العلم بالوقت المناسب، **مجموع نقاطك**`);
-				games[won.id].flag++;
-				cooldownGames.delete(message.author.id);
-				fs.writeFile("./games/games.json", JSON.stringify(games), (err) => {
-					if(err) console.error(err)
-				})
-			})
-			.catch(collected => {
-				message.channel.send(`:x: **لم يقم احد بكتابة اسم العلم بالوقت المناسب**`);
-				cooldownGames.delete(message.author.id);
-			})
-		})
-	}
-	if(command == prefix + 'رياضيات') {
-		let type = require('./qmath.json');
-		let item = type[Math.floor(Math.random() * type.length)];
-		let filter = response => {
-		return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
-		};
-		var lazPoints = games[message.author.id].laz;
-		var fkkPoints = games[message.author.id].fkk;
-		var fastPoints = games[message.author.id].fast;
-		var emojiPoints = games[message.author.id].emoji;
-		var flagPoints = games[message.author.id].flag;
-		var mathPoints = games[message.author.id].math;
-		var allPoints = lazPoints + fkkPoints + fastPoints + emojiPoints + flagPoints + mathPoints;
-		
-		if(cooldownGames.has(message.author.id)) return message.reply('**جاوب على السؤال اولا**');
-		cooldownGames.add(message.author.id);
-		
-		let qMath = new Discord.RichEmbed()
-		.setTitle(':video_game: **[GAMES]** لديك 10 ثواني فقط لتجيب على السؤال التالي')
-		.setDescription(`اسرع واحد يحسب المعادلة التالية:\n\n➥ **${item.type}**`)
-		.setThumbnail(client.user.avatarURL)
-		.setColor('00000')
-		.setTimestamp()
-		.setFooter(`${prefix}points :لمعرفة نقاطك قم بكتابة الامر التالي`, client.user.avatarURL)
-		
-		message.channel.send(qMath).then(() => {
-			message.channel.awaitMessages(filter, { maxMatches: 1, time: 10000, errors: ['time'] })
-			.then((collected) => {
-				let won = collected.first().author;
-				message.channel.send(`${collected.first().author} ✅ \`\`${allPoints + 1}\`\` **لقد قمت بحساب المعادلة بشكل صحيح بالوقت المناسب، مجموع نقاطك**`);
-				games[won.id].math++;
-				cooldownGames.delete(message.author.id);
-				fs.writeFile("./games/games.json", JSON.stringify(games), (err) => {
-					if(err) console.error(err)
-				})
-			})
-			.catch(collected => {
-				message.channel.send(`:x: **لم يقم احد بحساب المعادلة في الوقت المناسب**`);
-				cooldownGames.delete(message.author.id);
-			})
-		})
-	}
-	if(command == prefix + 'points') {
-		if(!games[message.author.id]) games[message.author.id] = {
-			laz: 0,
-			fkk: 0,
-			fast: 0,
-			emoji: 0,
-			flag: 0,
-			math: 0,
-		};
-		
-		if(args1 == '') {
-			var lazPoints = games[message.author.id].laz;
-			var fkkPoints = games[message.author.id].fkk;
-			var fastPoints = games[message.author.id].fast;
-			var emojiPoints = games[message.author.id].emoji;
-			var flagPoints = games[message.author.id].flag;
-			var mathPoints = games[message.author.id].math;
-			var allPoints = lazPoints + fkkPoints + fastPoints + emojiPoints + flagPoints + mathPoints;
-			var playerName = message.author.tag;
-			var playerAvatar = message.author.avatarURL;
-		}else {
-			if(!games[muf.id]) games[muf.id] = {
-				laz: 0,
-				fkk: 0,
-				fast: 0,
-				emoji: 0,
-				flag: 0,
-				math: 0,
-			};
-			
-			var lazPoints = games[muf.id].laz;
-			var fkkPoints = games[muf.id].fkk;
-			var fastPoints = games[muf.id].fast;
-			var emojiPoints = games[muf.id].emoji;
-			var flagPoints = games[muf.id].flag;
-			var mathPoints = games[muf.id].math;
-			var allPoints = lazPoints + fkkPoints + fastPoints + emojiPoints + flagPoints + mathPoints;
-			var playerName = muf.tag;
-			var playerAvatar = muf.avatarURL;
-		}
-		
-		let pointsPlayer = new Discord.RichEmbed()
-		.setTitle(':video_game: **[GAMES]** نقاط الالعاب')
-		.setThumbnail(client.user.avatarURL)
-		.setColor('GRAY')
-		.setDescription(`**\n:heavy_plus_sign: [ مجموع النقاط [ ${allPoints}\n**`)
-		.addField('**نقاط لعبة الالغاز:**', ` [ **${lazPoints}** ]`, true)
-		.addField('**نقاط لعبة فكك:**', ` [ **${fkkPoints}** ]`, true)
-		.addField('**نقاط لعبة اسرع كتابة:**', ` [ **${fastPoints}** ]`, true)
-		.addField('**نقاط لعبة الايموجي:**', ` [ **${emojiPoints}** ]`, true)
-		.addField('**نقاط لعبة الاعلام:**', ` [ **${flagPoints}** ]`, true)
-		.addField('**نقاط لعبة الرياضيات:**', ` [ **${mathPoints}** ]`, true)
-		.setTimestamp()
-		.setFooter(playerName, playerAvatar)
-		
-		message.channel.send(pointsPlayer);
-		
-		fs.writeFile("./games.json", JSON.stringify(games), (err) => {
-			if(err) console.error(err)
-		});
-	};
 });
 
 
-      client.on("message", message => {
-    if (message.content.toLowerCase() === prefix + "مساعدة") {
-        message.delete(5000)
-        if(!message.channel.guild) return;
-        const e = new Discord.RichEmbed()
-        .setColor('#00000')
-        .setTitle('Check Your DM’s | انظر الى الخاص')
-     const embed = new Discord.RichEmbed()
-         .setColor('#00000')
-         .setTitle('')
-         .setURL('')
-         .setDescription(`
- **
-الأوامر | Commands
+client.on('message', message => {
+	 if(message.author.bot) return;
+     if (!points[message.author.id]) points[message.author.id] = {
+             points: 0,id: message.author.id
+           };
+    if (message.content.startsWith(prefix+ 'ركب')) {
+      if(!message.channel.guild) return message.reply('**هذا الأمر للسيرفرات فقط**').then(m => m.delete(3000));
+    
+    const type = require('./rkb.json');
+    const item = type[Math.floor(Math.random() * type.length)];
+    const filter = response => {
+        return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
+    };
+    message.channel.send('**لديك 15 ثانيه لتركيب الكلمه**').then(msg => {
+ const w = ['./img/w1.png'];//الخافيه
+            let Image = Canvas.Image,
+            canvas = new Canvas(400, 150),
+            ctx = canvas.getContext('2d');
+    
+            fs.readFile(`${w[Math.floor(Math.random() * w.length)]}`, function (err, Background) {
+            if (err) return console.log(err);
+            let BG = Canvas.Image;
+            let ground = new Image;
+            ground.src = Background;
+            ctx.drawImage(ground, 0, 0, 400, 150);
+ 
+});
+ let url = message.author.displayAvatarURL.endsWith(".webp") ? message.author.displayAvatarURL.slice(5, -20) + ".png" : message.author.displayAvatarURL;
+               jimp.read(url, (err, ava) => {
+                    if (err) return console.log(err);
+                    ava.getBuffer(jimp.MIME_PNG, (err, buf) => {
+                        if (err) return console.log(err);
+                       
+                      
+                        ctx.font = '15px Arial';
+                              ctx.fontSize = '10px';
+                              ctx.fillStyle = "#FFFFFF";
+                              ctx.textAlign = "center";
+              ctx.fillText(`${item.type} ` , 250, 100);
+              
+               let Avatar = Canvas.Image;
+                              let ava = new Avatar;
+                              ava.src = buf;
+                              ctx.beginPath();
+                              ctx.arc(70, 80, 63, 0, Math.PI*2);
+                                 ctx.closePath();
+                                 ctx.clip();
+                                 ctx.drawImage(ava, 8, 18, 128, 126);   
+message.channel.sendFile(canvas.toBuffer());
+ })
+             
+                      message.channel.awaitMessages(filter, { maxMatches: 1, time: 30000, errors: ['time'] })//وقت الاجابة
+                      .then((collected) => {
+                           var embed = new Discord.RichEmbed()
+                            .setDescription(`${collected.first().author} ✅ احسنت لقد ركبت الكلمة`)
+                 message.channel.send(embed);
+                  console.log(`[Typing] ${collected.first().author} typed the word.`);
+                          let won = collected.first().author;
+                          points[won.id].points++;
+                        })
+                        .catch(collected => {
+                       var embed1 = new Discord.RichEmbed()
+                            .setDescription(`:x: لم يتمكن احد من تركيب الكلمة`)
+                 message.channel.send(embed1);
+                    console.log('[Typing] Error: No one type the word.');
+           
+                  })
+                })
+             
+  })
+}
 
-البرفكس الخاص بالبوت [ # ] Bot Prefix
-
-لعرض النقاط الخاصة بك [ #points - #نقاطي ] To display your points
-
-قائمة المتصدرين للسيرفر [ #top - #توب ] Guild Leaderboard ( قريبا | Comming Soon )
-
-قائمة المتصدرين في كافة السيرفرات [ #gtop - #الأفضل ] Global Leaderboardoard ( قريبا | Comming Soon )
-
-Number of games [ 10 ] عدد الألعاب
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-الألعاب
-
-#فكك | #spelling
-
-#اسرع | #type
-
-#عواصم | #captials
-
-#لغز | #puzzle
-
-#سؤال | #question ( قريبا | Comming Soon )
-
-#ايموجي | #emoji
-
-#علم | #flags
-
-#ترجم | #translate ( قريبا | Comming Soon )
-
-#اعكس | #reverse ( قريبا | Comming Soon )
-
-#احسب | #maths
-
-#انمي | #anime
-
-#pubg | ببجي
-
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-مبرمج البوت | Developers
-
-[ <@525434548939653151>]
-
-
-
-[ We will support fully English language Coming soon ]
- **
-`)
-   message.channel.send(e).then(m => m.delete(5000))
-   message.author.sendEmbed(embed).catch(error => message.reply(':cry: Your DM’s is CLosed | خاصك مغلق :cry:'))
-   
-   }
-   });
-
-   
-      client.on("message", message => {
-    if (message.content.toLowerCase() === prefix + "help") {
-        message.delete(5000)
-        if(!message.channel.guild) return;
-        const e = new Discord.RichEmbed()
-        .setColor('#00000')
-        .setTitle('Check Your DM’s | انظر الى الخاص')
-     const embed = new Discord.RichEmbed()
-         .setColor('#00000')
-         .setTitle('')
-         .setURL('')
-         .setDescription(`
- **
-الأوامر | Commands
-
-البرفكس الخاص بالبوت [ # ] Bot Prefix
-
-لعرض النقاط الخاصة بك [ #points - #نقاطي ] To display your points
-
-قائمة المتصدرين للسيرفر [ #top - #توب ] Guild Leaderboard ( قريبا | Comming Soon )
-
-قائمة المتصدرين في كافة السيرفرات [ #gtop - #الأفضل ] Global Leaderboardoard ( قريبا | Comming Soon )
-
-Number of games [ 10 ] عدد الألعاب
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-الألعاب
-
-#فكك | #spelling
-
-#اسرع | #type
-
-#عواصم | #captials
-
-#لغز | #puzzle
-
-#سؤال | #question ( قريبا | Comming Soon )
-
-#ايموجي | #emoji
-
-#علم | #flags
+});
 
 
-#احسب | #maths
-
-#انمي | #anime
-
-#pubg | ببجي
-
-سيرفر الرئيسي | Offical Server [  ]
-
-سيرفر الدعم الفني | Support Server [ :support: ]
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-مبرمج البوت | Developers
-
-[ <@525434548939653151> ]
 
 
-[ We will support fully English language Coming soon ]
- **
-`)
-   message.channel.send(e).then(m => m.delete(5000))
-   message.author.sendEmbed(embed).catch(error => message.reply(':cry: Your DM’s is CLosed | خاصك مغلق :cry:'))
-   
-   }
-   });
-   
+
+
+
+client.on('message', message => {
+	 if(message.author.bot) return;
+       if (!points[message.author.id]) points[message.author.id] = {
+             points: 0,id: message.author.id
+           };
+      if (message.content.startsWith(prefix + 'كتابه')) {
+        if(!message.channel.guild) return message.reply('**هذا الأمر للسيرفرات فقط**').then(m => m.delete(3000));
+      
+      const type = require('./type.json');
+      const item = type[Math.floor(Math.random() * type.length)];
+      const filter = response => {
+          return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
+      };
+      message.channel.send('** لديك 15 ثانيه لكتابه هذه الكلمه بسرعة**').then(msg => {
+      
+ const w = ['./img/w1.png'];//الخافيه
+            let Image = Canvas.Image,
+            canvas = new Canvas(400, 150),
+            ctx = canvas.getContext('2d');
+    
+            fs.readFile(`${w[Math.floor(Math.random() * w.length)]}`, function (err, Background) {
+            if (err) return console.log(err);
+            let BG = Canvas.Image;
+            let ground = new Image;
+            ground.src = Background;
+            ctx.drawImage(ground, 0, 0, 400, 150);
+ 
+});
+ let url = message.author.displayAvatarURL.endsWith(".webp") ? message.author.displayAvatarURL.slice(5, -20) + ".png" : message.author.displayAvatarURL;
+               jimp.read(url, (err, ava) => {
+                    if (err) return console.log(err);
+                    ava.getBuffer(jimp.MIME_PNG, (err, buf) => {
+                        if (err) return console.log(err);
+                       
+                      
+                        ctx.font = '15px Arial';
+                              ctx.fontSize = '10px';
+                              ctx.fillStyle = "#FFFFFF";
+                              ctx.textAlign = "center";
+              ctx.fillText(`${item.type} ` , 250, 100);
+              
+               let Avatar = Canvas.Image;
+                              let ava = new Avatar;
+                              ava.src = buf;
+                              ctx.beginPath();
+                              ctx.arc(70, 80, 63, 0, Math.PI*2);
+                                 ctx.closePath();
+                                 ctx.clip();
+                                 ctx.drawImage(ava, 8, 18, 128, 126);   
+message.channel.sendFile(canvas.toBuffer());
+ })
+             
+                      message.channel.awaitMessages(filter, { maxMatches: 1, time: 30000, errors: ['time'] })//وقت الاجابة
+                      .then((collected) => {
+                           var embed = new Discord.RichEmbed()
+                            .setDescription(`${collected.first().author} ✅ **احسنت لقد تمكنت من كتابه هذه الكلمه بسرعه**`)
+                 message.channel.send(embed);
+                  console.log(`[Typing] ${collected.first().author} typed the word.`);
+                          let won = collected.first().author;
+                          points[won.id].points++;
+                        })
+                        .catch(collected => {
+                       var embed1 = new Discord.RichEmbed()
+                            .setDescription(`:x: **لم يتمكن احد من كتابه هذه الكلمه في الوقت المناسب**`)
+                 message.channel.send(embed1);
+                    console.log('[Typing] Error: No one type the word.');
+           
+                  })
+                })
+             
+  })
+}
+
+});
+
+
+
+
+ client.on('message', message => {
+	  if(message.author.bot) return;
+      if (!points[message.author.id]) points[message.author.id] = {
+             points: 0,id: message.author.id
+           };
+    if (message.content.startsWith(prefix + 'رياضيات')) {
+      if(!message.channel.guild) return message.reply('**هذا الأمر للسيرفرات فقط**').then(m => m.delete(3000));
+    
+    const type = require('./math.json');
+    const item = type[Math.floor(Math.random() * type.length)];
+    const filter = response => {
+        return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
+    };
+    message.channel.send('**لديك 15 ثانيه لحل المسئله**').then(msg => {
+ const w = ['./img/w1.png'];//الخافيه
+            let Image = Canvas.Image,
+            canvas = new Canvas(400, 150),
+            ctx = canvas.getContext('2d');
+    
+            fs.readFile(`${w[Math.floor(Math.random() * w.length)]}`, function (err, Background) {
+            if (err) return console.log(err);
+            let BG = Canvas.Image;
+            let ground = new Image;
+            ground.src = Background;
+            ctx.drawImage(ground, 0, 0, 400, 150);
+ 
+});
+ let url = message.author.displayAvatarURL.endsWith(".webp") ? message.author.displayAvatarURL.slice(5, -20) + ".png" : message.author.displayAvatarURL;
+               jimp.read(url, (err, ava) => {
+                    if (err) return console.log(err);
+                    ava.getBuffer(jimp.MIME_PNG, (err, buf) => {
+                        if (err) return console.log(err);
+                       
+                      
+                        ctx.font = '15px Arial';
+                              ctx.fontSize = '10px';
+                              ctx.fillStyle = "#FFFFFF";
+                              ctx.textAlign = "center";
+              ctx.fillText(`${item.type} ` , 250, 100);
+              
+               let Avatar = Canvas.Image;
+                              let ava = new Avatar;
+                              ava.src = buf;
+                              ctx.beginPath();
+                              ctx.arc(70, 80, 63, 0, Math.PI*2);
+                                 ctx.closePath();
+                                 ctx.clip();
+                                 ctx.drawImage(ava, 8, 18, 128, 126);   
+message.channel.sendFile(canvas.toBuffer());
+ })
+             
+                       message.channel.awaitMessages(filter,{
+               thing: true,
+               maxMatches : 1,
+                time : 60000,
+                 maxUses: 1,
+                errors : ['time']
+            })//وقت الاجابة
+                      .then((collected) => {
+                           var embed = new Discord.RichEmbed()
+                            .setDescription(`${collected.first().author} ✅ **احسنت لقد تمكنت من أجابه عن معادله بسرعه**`)
+                 message.channel.send(embed);
+                  console.log(`[Typing] ${collected.first().author} typed the word.`);
+                          let won = collected.first().author;
+                          points[won.id].points++;
+                        })
+                        .catch(collected => {
+                       var embed1 = new Discord.RichEmbed()
+                            .setDescription(`:x: **لم يتمكن احد من حل معادله في الوقت المناسب**`)
+                 message.channel.send(embed1);
+                    console.log('[Typing] Error: No one type the word.');
+           
+                  })
+                })
+             
+  })
+}
+
+});
+
+
+
+
+
+
+
+
+
+
+
+
 client.on('message', message => {
       if(message.author.bot) return;
-if (message.content.startsWith(prefix + 'توب')) {
+if (message.content.startsWith(prefix + 'top')) {
     let _top = 1;
      let topp = Object.values(points);
- let top = topp.slice(0, 10).map(users => `**\`.${_top++}\` <@${users.id}> \`| ${users.points}\`**`).sort((a, b) => a > b).join('\n');
+ let top = topp.slice(0, 10).map(users => `**\`.${_top++}\` | <@${users.id}> \`XP: ${users.points}\`**`).sort((a, b) => a > b).join('\n');
     const prefixlor = new Discord.RichEmbed()
-      .setTitle("LeaderBoard")
+      .setTitle("Leaderboard")
       .setAuthor(client.user.username, client.user.avatarURL)
       .setDescription(top,true)
-      .setColor('#00000')
    
   	message.channel.sendEmbed(prefixlor)
 }
   
 });
+
+client.on('message', message => {
+      if(message.author.bot) return;
+if (message.content.startsWith(prefix + 'نقاطي')) {
+	if(!message.channel.guild) return message.reply('**هذا الأمر للسيرفرات فقط**').then(m => m.delete(3000));
+	let userData = points[message.author.id];
+	let embed = new Discord.RichEmbed()
+    .setAuthor(`${message.author.tag}`, message.author.avatarURL)
+	.setColor('#000000')
+	.setDescription(`نقاطك: \`${userData.points}\``)
+	message.channel.sendEmbed(embed)
+  }
+});
+client.on('message', message => {
+  if(message.author.bot) return;
+if (message.content.startsWith(prefix + 'points')) {
+if(!message.channel.guild) return message.reply('**هذا الأمر للسيرفرات فقط**').then(m => m.delete(3000));
+let userData = points[message.author.id];
+let embed = new Discord.RichEmbed()
+.setAuthor(`${message.author.tag}`, message.author.avatarURL)
+.setColor('#000000')
+.setDescription(`نقاطك: \`${userData.points}\``)
+message.channel.sendEmbed(embed)
+}
+});
+
+
+
+   
+
+client.on('message' , message => {
+  if(message.author.bot) return;
+  if(message.content.startsWith(prefix + "xo")) {
+ let array_of_mentions = message.mentions.users.array();
+  let symbols = [':o:', ':heavy_multiplication_x:']
+  var grid_message;
+ 
+  if (array_of_mentions.length == 1 || array_of_mentions.length == 2) {
+    let random1 = Math.floor(Math.random() * (1 - 0 + 1)) + 0;
+    let random2 = Math.abs(random1 - 1);
+    if (array_of_mentions.length == 1) {
+      random1 = 0;
+      random2 = 0;
+    }
+    var player1_id = message.author.id
+    let player2_id = array_of_mentions[random2].id;
+    var turn_id = player1_id;
+    var symbol = symbols[0];
+    let initial_message = `اللعبة بين اللاعبين التاليين <@${player1_id}> and <@${player2_id}>!`;
+    if (player1_id == player2_id) {
+      initial_message += '\n_(لقد خسرت, العب مع نفسك :joy:)_'
+    }
+    message.channel.send(`Xo ${initial_message}`)
+    .then(console.log("Successful tictactoe introduction"))
+    .catch(console.error);
+    message.channel.send(':one::two::three:' + '\n' +
+                         ':four::five::six:' + '\n' +
+                         ':seven::eight::nine:')
+    .then((new_message) => {
+      grid_message = new_message;
+    })
+    .then(console.log("Successful tictactoe game initialization"))
+    .catch(console.error);
+    message.channel.send('Loading... Please wait for the :ok: reaction.')
+    .then(async (new_message) => {
+      await new_message.react('1⃣');
+      await new_message.react('2⃣');
+      await new_message.react('3⃣');
+      await new_message.react('4⃣');
+      await new_message.react('5⃣');
+      await new_message.react('6⃣');
+      await new_message.react('7⃣');
+      await new_message.react('8⃣');
+      await new_message.react('9⃣');
+      await new_message.react('🆗');
+      await new_message.edit(`It\'s <@${turn_id}>\'s اشتغل! الرمز هو ${symbol}`)
+      .then((new_new_message) => {
+        require('./xo.js')(client, message, new_new_message, player1_id, player2_id, turn_id, symbol, symbols, grid_message);
+      })
+      .then(console.log("Successful tictactoe listeprefix initialization"))
+      .catch(console.error);
+    })
+    .then(console.log("Successful tictactoe react initialization"))
+    .catch(console.error);
+  }
+  else {
+    message.channel.send(`جرب v!xo @uesr`)
+    .then(console.log("Successful error reply"))
+    .catch(console.error);
+  }
+}
+ });  
+
+client.on("message", function(message) {
+    var prefix = "#";
+   if(message.content.startsWith(prefix + "rps")) {
+    let messageArgs = message.content.split(" ").slice(1).join(" ");
+    let messageRPS = message.content.split(" ").slice(2).join(" ");
+    let arrayRPS = ['**# - Rock**','**# - Paper**','**# - Scissors**'];
+    let result = `${arrayRPS[Math.floor(Math.random() * arrayRPS.length)]}`;
+    var RpsEmbed = new Discord.RichEmbed()
+    .setAuthor(message.author.username)
+    .setThumbnail(message.author.avatarURL)
+    .addField("Rock","🇷",true)
+    .addField("Paper","🇵",true)
+    .addField("Scissors","🇸",true)
+    message.channel.send(RpsEmbed).then(msg => {
+        msg.react(' 🇷')
+        msg.react("🇸")
+        msg.react("🇵")
+.then(() => msg.react('🇷'))
+.then(() =>msg.react('🇸'))
+.then(() => msg.react('🇵'))
+let reaction1Filter = (reaction, user) => reaction.emoji.name === '🇷' && user.id === message.author.id;
+let reaction2Filter = (reaction, user) => reaction.emoji.name === '🇸' && user.id === message.author.id;
+let reaction3Filter = (reaction, user) => reaction.emoji.name === '🇵' && user.id === message.author.id;
+let reaction1 = msg.createReactionCollector(reaction1Filter, { time: 12000 });
+       
+let reaction2 = msg.createReactionCollector(reaction2Filter, { time: 12000 });
+let reaction3 = msg.createReactionCollector(reaction3Filter, { time: 12000 });
+reaction1.on("collect", r => {
+        message.channel.send(result)
+})
+reaction2.on("collect", r => {
+        message.channel.send(result)
+})
+reaction3.on("collect", r => {
+        message.channel.send(result)
+})
+ 
+    })
+}
+});
+const devs = ["525434548939653151"]
+
+const adminprefix = "g";
+client.on('message', message => {
+    var argresult = message.content.split(` `).slice(1).join(' ');
+      if (!devs.includes(message.author.id)) return;
+      
+  if (message.content.startsWith(adminprefix + 'ply')) {
+    client.user.setGame(argresult);
+      message.channel.sendMessage(`**:white_check_mark:   ${argresult}**`)
+  } else 
+    if (message.content === (adminprefix + "Percie")) {
+    message.guild.leave();        
+  } else  
+  if (message.content.startsWith(adminprefix + 'wt')) {
+  client.user.setActivity(argresult, {type:'WATCHING'});
+      message.channel.sendMessage(`**:white_check_mark:   ${argresult}**`)
+  } else 
+  if (message.content.startsWith(adminprefix + 'ls')) {
+  client.user.setActivity(argresult , {type:'LISTENING'});
+      message.channel.sendMessage(`**:white_check_mark:   ${argresult}**`)
+  } else     
+    if (message.content.startsWith(adminprefix + 'setname')) {
+  client.user.setUsername(argresult).then
+      message.channel.sendMessage(`**${argresult}** : Done :>`)
+  return message.reply("**You Can't Change Your Name ,Only After Two Hours :>**");
+  } else
+    if (message.content.startsWith(adminprefix + 'setavatar')) {
+  client.user.setAvatar(argresult);
+    message.channel.sendMessage(`**${argresult}** : تم تغير صورة البوت`);
+        } else     
+  if (message.content.startsWith(adminprefix + 'st')) {
+    client.user.setGame(argresult, "https://www.twitch.tv/idk");
+      message.channel.sendMessage(`**:white_check_mark:   ${argresult}**`)
+  }
+    if(message.content === adminprefix + "restart") {
+      if (!devs.includes(message.author.id)) return;
+          message.channel.send(`:warning:️ **Bot restarting by ${message.author.username}**`);
+        console.log("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        console.log(` Bot restarting... ⚠️`);
+        console.log("===============================================\n\n");
+        client.destroy();
+        child_process.fork(dirname + "/bot.js");
+        console.log(`Bot Successfully Restarted`);
+    }
+  
+  });
+  
+
 client.login(process.env.BOT_TOKEN);
